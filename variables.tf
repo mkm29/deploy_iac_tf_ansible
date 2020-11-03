@@ -12,3 +12,13 @@ variable "region-worker" {
   type    = string
   default = "us-west-1"
 }
+
+variable "ingress_rules" {
+  type    = list(number)
+  default = [80, 443]
+}
+
+variable "external_ip" {
+  type    = string
+  default = "0.0.0.0/0"
+}
