@@ -2,7 +2,7 @@
 resource "aws_security_group" "lb-sg" {
   provider    = aws.region-master
   name        = "lb-sg"
-  description = "Allow 443 and traffic to Jenkins SG"
+  description = "Allow 443 traffic to Jenkins SG"
   vpc_id      = aws_vpc.vpc_master.id
   ingress {
     description = "Allow 443 from anywhere"
@@ -60,8 +60,6 @@ resource "aws_security_group" "jenkins-sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
-
-
 
 #Create SG for allowing TCP/22 from your IP in us-west-2
 resource "aws_security_group" "jenkins-sg-ohio" {
