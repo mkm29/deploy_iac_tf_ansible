@@ -1,3 +1,4 @@
 *.tfstate
 .terraform/
 id_rsa*
+.vscode
