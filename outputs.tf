@@ -5,6 +5,7 @@ output "MasterPrivateKey" {
 ## Need to write pem file to disk
 #
 # `terraform output MasterPrivateKey > id_rsa.pem`
+# `chmod 400 id_rsa.pem`
 # `ssh -i id_rsa.pem ec2-user@$(terraform output Jenkins-Main-Node-Public-IP)`
 #
 #################################
