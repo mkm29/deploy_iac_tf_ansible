@@ -11,25 +11,23 @@ data "aws_ssm_parameter" "linuxAmiOhio" {
 }
 
 # Generate the ssh key pair
-resource "tls_private_key" "ssh_key" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
+# resource "tls_private_key" "ssh_key" {
+#   algorithm = "RSA"
+#   rsa_bits  = 4096
+# }
 
 # Create key-pair for logging into EC2 in us-east-1
 resource "aws_key_pair" "master-key" {
   provider   = aws.region-master
   key_name   = "jenkins"
-  public_key = tls_private_key.ssh_key.public_key_openssh
-  #   public_key = file("~/.ssh/aws_acg_rsa.pub")
+  public_key = file("~/.ssh/aws_acg_rsa.pub")
 }
 
 # Create key-pair for logging into EC2 in us-west-2
 resource "aws_key_pair" "worker-key" {
   provider   = aws.region-worker
   key_name   = "jenkins"
-  public_key = tls_private_key.ssh_key.public_key_openssh
-  #   public_key = file("~/.ssh/aws_acg_rsa.pub")
+  public_key = file("~/.ssh/aws_acg_rsa.pub")
 }
 
 # Create EC2 instance in us-east-2
@@ -51,8 +49,17 @@ resource "aws_instance" "jenkins-master" {
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    private_key = tls_private_key.ssh_key.private_key_pem
+    private_key = file("~/.ssh/aws_acg_rsa")
     host        = self.public_ip
+  }
+  #The code below is ONLY the provisioner block which needs to be
+  #inserted inside the resource block for Jenkins EC2 worker in Terraform
+
+  provisioner "local-exec" {
+    command = <<EOF
+aws --profile ${var.profile} ec2 wait instance-status-ok --region ${var.region-master} --instance-ids ${self.id}
+ansible-playbook --extra-vars 'passed_in_hosts=tag_Name_${self.tags.Name}' ansible_templates/jenkins-master-sample.yml
+EOF
   }
 }
 
@@ -73,10 +80,20 @@ resource "aws_instance" "jenkins-worker-ohio" {
 
   depends_on = [aws_main_route_table_association.set-worker-default-rt-assoc, aws_instance.jenkins-master]
 
+  #The code below is ONLY the provisioner block which needs to be
+  #inserted inside the resource block for Jenkins EC2 worker in Terraform
+
+  provisioner "local-exec" {
+    command = <<EOF
+  aws --profile ${var.profile} ec2 wait instance-status-ok --region ${var.region-worker} --instance-ids ${self.id}
+  ansible-playbook --extra-vars 'passed_in_hosts=tag_Name_${self.tags.Name}' ansible_templates/jenkins-worker-sample.yml
+  EOF
+  }
+
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    private_key = tls_private_key.ssh_key.private_key_pem
+    private_key = file("~/.ssh/aws_acg_rsa")
     host        = self.public_ip
   }
 }
